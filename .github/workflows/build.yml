@@ -1,0 +1,74 @@
+name: Build Decompyle++
+on:
+  schedule:
+    - cron: "0 0 * * 0"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current repo
+        uses: actions/checkout@v3
+
+      - name: Get Latest Commit
+        run: |
+          git clone --depth=1 https://github.com/zrax/pycdc
+          cd pycdc
+          last_commit=$(git log -1 --format=%h)
+          cd ..
+          if [ "$(cat ./commit)" = "$last_commit" ]; then
+            echo "Latest Release Available.Stopping workflow..."
+            echo "RECENT_COMMIT=False" >> ${GITHUB_ENV} 
+          else
+            echo "RECENT_COMMIT=True" >> ${GITHUB_ENV}
+            echo "RECENT_COM=$last_commit" >> ${GITHUB_ENV}
+          fi
+
+      - name: Setup MinGW
+        if: ${{env.RECENT_COMMIT == 'True'}}
+        uses: egor-tensin/setup-mingw@v2
+        with:
+          platform: x64
+
+      - name: Compile for Windows
+        if: ${{env.RECENT_COMMIT == 'True'}}
+        run: |
+          cd pycdc
+          cmake -DCMAKE_SYSTEM_NAME=Windows \
+          -DCMAKE_C_COMPILER=i686-w64-mingw32-gcc \
+          -DCMAKE_CXX_COMPILER=i686-w64-mingw32-g++ \
+          -DCMAKE_FIND_ROOT_PATH=/usr/i686-w64-mingw32 \
+          -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY \
+          -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER \
+          -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY \
+          -DCMAKE_CXX_STANDARD_LIBRARIES="-static-libgcc -static-libstdc++" \
+          .
+          make
+
+      - name: Generate build artifacts
+        if: ${{env.RECENT_COMMIT == 'True'}}
+        run: |
+          echo "DATE=$(date -u '+%B %d')" >> ${GITHUB_ENV}
+          git clone --depth=1 https://github.com/zrax/pycdc pycdc-src && zip -r pycdc-src.zip pycdc-src
+          mkdir -p pycdc-windows
+          test -d ./pycdc && mv ./pycdc/pycdc.exe ./pycdc/pycdas.exe ./pycdc-windows/
+          zip -r pycdc-windows.zip pycdc-windows
+
+      - name: Create Release
+        if: ${{env.RECENT_COMMIT == 'True'}}
+        uses: ncipollo/release-action@v1
+        with:
+          name: Decompyle++ Build ${{ env.DATE }}
+          artifacts: "*.zip"
+          tag: build-${{ env.RECENT_COM }}
+          body: "**Commit** [${{ env.RECENT_COM }}](https://github.com/zrax/pycdc/commit/${{ env.RECENT_COM }})\nBuilt on : ${{ env.DATE }}"
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit to Repo
+        if: ${{env.RECENT_COMMIT == 'True'}}
+        run: |
+          echo "${{ env.RECENT_COM }}" > ./commit
+          git config user.name Catz
+          git config user.email github-actions@github.com
+          git add ./commit && git commit -m "${{ env.RECENT_COM }}" && git push
