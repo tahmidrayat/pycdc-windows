@@ -19,7 +19,7 @@ jobs:
         name: Build Image
         run: |
           docker build \
-            --tag ghcr.io/ItzCatzHere/pycdc:latest \
+            --tag ghcr.io/itzcatzhere/pycdc:latest \
             .
       - 
         name: Login
@@ -33,4 +33,4 @@ jobs:
       - 
         name: Push
         if: github.repository == 'ItzCatzHere/pycdc-windows' && github.ref == 'refs/heads/master' 
-        run: docker push ghcr.io/ItzCatzHere/pycdc:latest
+        run: docker push ghcr.io/itzcatzhere/pycdc:latest
