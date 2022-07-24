@@ -1,0 +1,36 @@
+name: Build Pycdc Docker Image
+
+on:
+  push:
+  workflow_dispatch:
+
+env:
+  CI: true
+  DOCKER_BUILDKIT: 1
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Build Image
+        run: |
+          docker build \
+            --tag ghcr.io/ItzCatzHere/pycdc:latest \
+            .
+      - 
+        name: Login
+        if: github.repository == 'ItzCatzHere/pycdc-windows'
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - 
+        name: Push
+        if: github.repository == 'ItzCatzHere/pycdc-windows' && github.ref == 'refs/heads/master' 
+        run: docker push ghcr.io/ItzCatzHere/pycdc:latest
