@@ -1,6 +1,6 @@
-### *Download compiled binary from latest [release](https://github.com/ItzCatzHere/pycdc-windows/releases/latest)*
+### *Download compiled binary from latest [release](https://github.com/tahmidrayat/pycdc-windows/releases/latest)*
 
-#### *Pycdc Docker Image* : `docker pull ghcr.io/itzcatzhere/pycdc:latest`
+#### *Pycdc Docker Image* : `docker pull ghcr.io/tahmidrayat/pycdc:latest`
 
 <details>
   <summary><h3>Original README</h3></summary>
